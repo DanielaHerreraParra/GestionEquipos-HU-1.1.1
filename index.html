@@ -2,36 +2,99 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Gestión de Equipos</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión Deportiva - Pro</title>
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-
     <div class="main-wrapper">
-        <h1>Gestión de Equipos</h1>
+        <h1>Gestión Deportiva</h1>
 
-        <form id="addTeamForm">
-            <label for="teamName">Nombre del equipo</label>
-            <input type="text" id="teamName" required>
+        <div class="search-container">
+            <div class="search-wrapper">
+                <input type="text" id="searchInput" placeholder="🔍 Buscar por equipo o jugador...">
+            </div>
+        </div>
 
-            <label for="teamLogo">Logo del equipo</label>
-            <input type="file" id="teamLogo" accept="image/*">
+        <div class="grid-forms">
+            <section class="form-section">
+                <h2>Registrar Equipo</h2>
+                <form id="addTeamForm">
+                    <div class="input-group">
+                        <label>Nombre del equipo *</label>
+                        <input type="text" id="teamName" required>
+                    </div>
+                    <div class="input-group">
+                        <label>Logo (Imagen)</label>
+                        <input type="file" id="teamLogo" accept="image/*">
+                    </div>
+                    <button type="submit" class="btn-main">Guardar Equipo</button>
+                </form>
+            </section>
 
-            <button type="submit">Agregar Equipo</button>
-        </form>
-
-        <div class="selector-box">
-            <label for="teamSelect">Equipos registrados:</label>
-            <select id="teamSelect">
-                <option value="">Selecciona...</option>
-            </select>
+            <section class="form-section">
+                <h2>Registrar Jugador</h2>
+                <form id="addPlayerForm">
+                    <div class="input-group">
+                        <label>Nombre completo</label>
+                        <input type="text" id="playerName" required>
+                    </div>
+                    <div class="form-row">
+                        <div class="input-group">
+                            <label>Edad</label>
+                            <input type="number" id="playerAge" required>
+                        </div>
+                        <div class="input-group">
+                            <label>Posición</label>
+                            <select id="playerPos">
+                                <option value="Portero">Portero</option>
+                                <option value="Defensa">Defensa</option>
+                                <option value="Mediocampista">Mediocampista</option>
+                                <option value="Delantero">Delantero</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="input-group">
+                        <label>Vincular Equipo</label>
+                        <select id="teamSelect" required>
+                            <option value="">Selecciona un equipo...</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn-player">Guardar Jugador</button>
+                </form>
+            </section>
         </div>
 
         <hr>
 
-        <div id="teamCardsContainer"></div>
-    </div>
+        <div class="results-layout">
+            <aside class="teams-column">
+                <h3>Equipos</h3>
+                <div id="teamCardsContainer" class="vertical-scroll"></div>
+            </aside>
 
+            <main class="players-column">
+                <div class="table-header-actions">
+                    <h3>Jugadores</h3>
+                    <button onclick="resetTable()" class="btn-reset">Mostrar Todos</button>
+                </div>
+                <div class="table-wrapper">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Edad</th>
+                                <th>Posición</th>
+                                <th>Equipo</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody id="playersTableBody"></tbody>
+                    </table>
+                </div>
+            </main>
+        </div>
+    </div>
     <script src="scrip.js"></script>
 </body>
 </html>
