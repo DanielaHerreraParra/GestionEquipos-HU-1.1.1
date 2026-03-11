@@ -1,69 +1,115 @@
-let teams = [];
+let teams = JSON.parse(localStorage.getItem('teams')) || [];
+let players = JSON.parse(localStorage.getItem('players')) || [];
 
 document.addEventListener('DOMContentLoaded', () => {
-    const form = document.getElementById('addTeamForm');
-    const cardsContainer = document.getElementById('teamCardsContainer');
-    const selectElement = document.getElementById('teamSelect');
+    renderAll();
 
-    // --- FUNCIÓN PARA DIBUJAR TARJETAS (Acepta una lista filtrada o la total) ---
-    const renderCards = (teamsToDisplay) => {
-        cardsContainer.innerHTML = ""; 
-        teamsToDisplay.forEach(equipo => {
-            const card = document.createElement('div');
-            card.className = 'team-card';
-            card.innerHTML = `
-                <img src="${equipo.logo}" alt="Logo">
-                <h3>${equipo.name}</h3>
-            `;
-            cardsContainer.appendChild(card);
+    // BUSCADOR UNIFICADO: Filtra equipos y jugadores a la vez
+    const searchInput = document.getElementById('searchInput');
+    searchInput.addEventListener('input', (e) => {
+        const term = e.target.value.toLowerCase().trim();
+        
+        // Filtrar Equipos
+        const filteredTeams = teams.filter(t => t.name.toLowerCase().includes(term));
+        renderTeams(filteredTeams);
+
+        // Filtrar Jugadores
+        const filteredPlayers = players.filter(p => {
+            const team = teams.find(t => t.id === p.teamId);
+            const teamName = team ? team.name.toLowerCase() : "";
+            return p.name.toLowerCase().includes(term) || teamName.includes(term);
         });
-    };
-
-    // --- FUNCIÓN PARA ACTUALIZAR EL SELECT ---
-    const updateSelect = () => {
-        selectElement.innerHTML = '<option value="">Mostrar Equipos Registrados...</option>';
-        teams.forEach(equipo => {
-            const option = document.createElement('option');
-            option.value = equipo.id;
-            option.textContent = equipo.name;
-            selectElement.appendChild(option);
-        });
-    };
-
-    // --- EVENTO: AGREGAR EQUIPO ---
-    form.addEventListener('submit', (e) => {
-        e.preventDefault();
-        const nameInput = document.getElementById('teamName');
-        const logoInput = document.getElementById('teamLogo');
-
-        let logoSrc = "https://via.placeholder.com/80?text=LOGO";
-        if (logoInput.files && logoInput.files[0]) {
-            logoSrc = URL.createObjectURL(logoInput.files[0]);
-        }
-
-        const nuevoEquipo = {
-            id: Date.now().toString(), // ID único como String
-            name: nameInput.value.trim(),
-            logo: logoSrc
-        };
-
-        teams.push(nuevoEquipo);
-        renderCards(teams); // Mostrar todos al agregar uno nuevo
-        updateSelect();
-        form.reset();
+        renderTable(filteredPlayers);
     });
 
-    // --- EVENTO: FILTRAR POR SELECCIÓN (Lo que pediste) ---
-    selectElement.addEventListener('change', (e) => {
-        const selectedId = e.target.value;
+    // Guardar Equipo
+    document.getElementById('addTeamForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        const file = document.getElementById('teamLogo').files[0];
+        const name = document.getElementById('teamName').value;
+        const save = (img) => {
+            teams.push({ id: Date.now().toString(), name, logo: img });
+            updateStorage();
+            this.reset();
+        };
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (e) => save(e.target.result);
+            reader.readAsDataURL(file);
+        } else { save('https://via.placeholder.com/50?text=Logo'); }
+    });
 
-        if (selectedId === "") {
-            // Si no hay nada seleccionado, mostrar todos
-            renderCards(teams);
-        } else {
-            // Filtrar el arreglo por el ID seleccionado
-            const filteredTeam = teams.filter(t => t.id === selectedId);
-            renderCards(filteredTeam);
-        }
+    // Guardar Jugador
+    document.getElementById('addPlayerForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        players.push({
+            id: Date.now().toString(),
+            name: document.getElementById('playerName').value,
+            age: document.getElementById('playerAge').value,
+            pos: document.getElementById('playerPos').value,
+            teamId: document.getElementById('teamSelect').value
+        });
+        updateStorage();
+        this.reset();
     });
 });
+
+function updateStorage() {
+    localStorage.setItem('teams', JSON.stringify(teams));
+    localStorage.setItem('players', JSON.stringify(players));
+    renderAll();
+}
+
+function renderAll() {
+    renderTeams(teams);
+    
+    document.getElementById('teamSelect').innerHTML = '<option value="">Selecciona equipo...</option>' + 
+        teams.map(t => `<option value="${t.id}">${t.name}</option>`).join('');
+
+    renderTable(players);
+}
+
+function renderTeams(data) {
+    const container = document.getElementById('teamCardsContainer');
+    container.innerHTML = data.map(t => `
+        <div class="team-card" onclick="filterByTeam('${t.id}', this)">
+            <img src="${t.logo}">
+            <strong>${t.name}</strong>
+        </div>`).join('');
+}
+
+window.filterByTeam = (id, element) => {
+    document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+    if (element) element.classList.add('selected');
+    const filtered = players.filter(p => p.teamId === id);
+    renderTable(filtered);
+};
+
+window.resetTable = () => {
+    document.querySelectorAll('.team-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('searchInput').value = "";
+    renderAll();
+};
+
+window.deletePlayer = (id) => {
+    players = players.filter(p => p.id !== id);
+    updateStorage();
+};
+
+function renderTable(data) {
+    const body = document.getElementById('playersTableBody');
+    if (data.length === 0) {
+        body.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#94a3b8; padding:20px;">Sin resultados</td></tr>';
+        return;
+    }
+    body.innerHTML = data.map(p => {
+        const team = teams.find(t => t.id === p.teamId);
+        return `<tr>
+            <td><strong>${p.name}</strong></td>
+            <td>${p.age}</td>
+            <td>${p.pos}</td>
+            <td>${team ? team.name : 'N/A'}</td>
+            <td><button class="delete-btn" onclick="deletePlayer('${p.id}')">Eliminar</button></td>
+        </tr>`;
+    }).join('');
+}
